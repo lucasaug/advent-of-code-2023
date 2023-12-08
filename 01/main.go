@@ -11,51 +11,40 @@ import (
 )
 
 func ExtractNumber(s string) int {
-	firstDigit := '\x00'
-	lastDigit := '\x00'
+	numbers := [9]string{
+		"one",
+		"two",
+		"three",
+		"four",
+		"five",
+		"six",
+		"seven",
+		"eight",
+		"nine",
+	}
 
-	for _, c := range s{
+	firstDigit := 0
+	lastDigit := 0
+
+	for strIndex, c := range s {
 		if unicode.IsNumber(c) {
-			if firstDigit == '\x00' {
-				firstDigit = c
+			if firstDigit == 0 {
+				firstDigit, _ = strconv.Atoi(string(c))
 			}
-			lastDigit = c
+			lastDigit, _ = strconv.Atoi(string(c))
+		} else {
+			for i, num := range numbers {
+				if strings.HasPrefix(s[strIndex:], num) {
+					if firstDigit == 0 {
+						firstDigit = i + 1
+					}
+					lastDigit = i + 1
+				}
+			}
 		}
 	}
 
-	fullNumber := string(firstDigit) + string(lastDigit)
-
-	i, err := strconv.Atoi(fullNumber)
-
-	if err != nil {
-		panic(err)
-	}
-
-	return i
-}
-
-func ConvertNumberNamesToValue(s string) string {
-	replacer := strings.NewReplacer(
-		"one", "1",
-		"two", "2",
-		"three", "3",
-		"four", "4",
-		"five", "5",
-		"six", "6",
-		"seven", "7",
-		"eight", "8",
-		"nine", "9",
-	)
-
-	return replacer.Replace(s)
-}
-
-func Rev(s string) string {
-    runes := []rune(s)
-    for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-        runes[i], runes[j] = runes[j], runes[i]
-    }
-    return string(runes)
+	return firstDigit*10 + lastDigit
 }
 
 func main() {
@@ -64,11 +53,7 @@ func main() {
 	sum := 0
 	for scanner.Scan() {
 		text := scanner.Text()
-		fmt.Println(text)
-		converted := ConvertNumberNamesToValue(text)
-		fmt.Println(converted)
-		num := ExtractNumber(converted)
-		fmt.Println(num)
+		num := ExtractNumber(text)
 		sum = sum + num
 	}
 
