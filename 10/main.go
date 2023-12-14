@@ -181,9 +181,168 @@ func CalculateFarthest(
     return distance - 1
 }
 
+func TraverseAndReplace(
+    puzzleMap [][]string,
+    startingRow, startingCol int) [][]string {
+    directions := GetAvailableDirections(puzzleMap, startingRow, startingCol)
+    puzzleMap[startingRow][startingCol] = "X"
+
+    offsetRow, offsetCol := DirectionToOffset(directions[0])
+    currentlyVisiting := [2]int {
+        startingRow + offsetRow,
+        startingCol + offsetCol,
+    }
+
+    lastDirection := directions[0]
+
+    for currentlyVisiting != [2]int {startingRow, startingCol} {
+        row := currentlyVisiting[0]
+        col := currentlyVisiting[1]
+        directions := GetAvailableDirections(puzzleMap, row, col)
+
+        selected := directions[0]
+        if directions[0] == OppositeDirection(lastDirection) {
+            selected = directions[1]
+        }
+
+        puzzleMap[currentlyVisiting[0]][currentlyVisiting[1]] = "X"
+        offsetRow, offsetCol := DirectionToOffset(selected)
+        currentlyVisiting[0] += offsetRow
+        currentlyVisiting[1] += offsetCol
+
+        lastDirection = selected
+    }
+
+    return puzzleMap
+}
+
+func CountEnclosedTiles(
+    puzzleMap [][]string,
+    startingRow, startingCol int) int {
+    var markedPuzzleMap [][]string
+    for _, row := range puzzleMap {
+        newRow := append([]string{}, row...)
+        markedPuzzleMap = append(markedPuzzleMap, newRow)
+    }
+
+    markedPuzzleMap = TraverseAndReplace(markedPuzzleMap, startingRow, startingCol)
+
+    for i, row := range markedPuzzleMap {
+        inside := false
+        inwall := false
+        wallIncomingDir := NONEDIR
+
+        for j, value := range row {
+            if value == "X" {
+                if !inwall {
+                    dirs := GetAvailableDirections(puzzleMap, i, j)
+                    enteringWall := false
+                    orthogonalDir := NONEDIR
+
+                    for _, dir := range dirs {
+                        if dir == EAST {
+                            enteringWall = true
+                        } else {
+                            orthogonalDir = dir
+                        }
+                    }
+
+                    if enteringWall {
+                        wallIncomingDir = orthogonalDir
+                        inwall = true
+                    } else {
+                        inside = !inside
+                    }
+                } else {
+                    dirs := GetAvailableDirections(puzzleMap, i, j)
+                    orthogonalDir := NONEDIR
+
+                    for _, dir := range dirs {
+                        if dir == NORTH || dir == SOUTH {
+                            orthogonalDir = dir
+                        }
+                    }
+
+                    if orthogonalDir != NONEDIR {
+                        // leaving wall
+                        inwall = false
+                        if orthogonalDir != wallIncomingDir {
+                            inside = !inside
+                        }
+                    }
+                }
+            } else if inside {
+                markedPuzzleMap[i][j] = "O"
+            }
+        }
+    }
+
+    for i := 0; i < len(markedPuzzleMap[0]); i++ {
+        inside := false
+        inwall := false
+        wallIncomingDir := NONEDIR
+
+        for j := range markedPuzzleMap {
+            if markedPuzzleMap[j][i] == "X" {
+                if !inwall {
+                    dirs := GetAvailableDirections(puzzleMap, j, i)
+                    enteringWall := false
+                    orthogonalDir := NONEDIR
+
+                    for _, dir := range dirs {
+                        if dir == SOUTH {
+                            enteringWall = true
+                        } else {
+                            orthogonalDir = dir
+                        }
+                    }
+
+                    if enteringWall {
+                        wallIncomingDir = orthogonalDir
+                        inwall = true
+                    } else {
+                        inside = !inside
+                    }
+                } else {
+                    dirs := GetAvailableDirections(puzzleMap, j, i)
+                    orthogonalDir := NONEDIR
+
+                    for _, dir := range dirs {
+                        if dir == WEST || dir == EAST {
+                            orthogonalDir = dir
+                        }
+                    }
+
+                    if orthogonalDir != NONEDIR {
+                        // leaving wall
+                        if orthogonalDir != wallIncomingDir {
+                            inside = !inside
+                        }
+                        inwall = false
+                    }
+                }
+            } else if inside {
+                markedPuzzleMap[j][i] = "O"
+            }
+        }
+    }
+
+    count := 0
+    for _, row := range markedPuzzleMap {
+        for _, value := range row {
+            if value == "O" {
+                count++
+            }
+        }
+    }
+
+    return count
+}
+
 func main() {
     scanner := bufio.NewScanner(os.Stdin)
 
     puzzleMap, startingRow, startingCol := ParseMap(scanner)
-    fmt.Println(CalculateFarthest(puzzleMap, startingRow, startingCol))
+    // fmt.Println(CalculateFarthest(puzzleMap, startingRow, startingCol))
+    fmt.Println(CountEnclosedTiles(puzzleMap, startingRow, startingCol))
 }
