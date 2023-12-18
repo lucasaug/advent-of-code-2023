@@ -25,6 +25,24 @@ func CalculateLoad(puzzle [][]rune) int {
     return sum
 }
 
+func RotateMatrix(slice [][]rune) [][]rune {
+    xl := len(slice[0])
+    yl := len(slice)
+    result := make([][]rune, xl)
+
+    for i := range result {
+        result[i] = make([]rune, yl)
+    }
+
+    for i := 0; i < xl; i++ {
+        for j := 0; j < yl; j++ {
+            result[i][yl - j - 1] = slice[j][i]
+        }
+    }
+
+    return result
+}
+
 func Cycle(puzzle [][]rune) [][]rune {
     result := [][]rune{}
     for _, row := range puzzle {
@@ -32,60 +50,37 @@ func Cycle(puzzle [][]rune) [][]rune {
         result = append(result, rowCopy)
     }
 
-    for k := 0; k <= 4; k++ {
-        scanLength := len(puzzle[0])
-        orthogonalLength := len(puzzle)
-        if k % 2 == 1 {
-            scanLength, orthogonalLength = orthogonalLength, scanLength
-        }
+    for k := 0; k < 4; k++ {
+        lastAvailablePosition := make([]int, len(result[0]))
 
-        lastAvailablePosition := make([]int, scanLength)
-        if k == 2 || k == 3 {
-            for i := range lastAvailablePosition {
-                lastAvailablePosition[i] = orthogonalLength - 1
+        for i := range result {
+            for j, value := range result[i] {
+                if value == 'O' {
+                    result[i][j] = '.'
+                    result[lastAvailablePosition[j]][j] = 'O'
+                    lastAvailablePosition[j]++
+                }
+                if value == '#' && i < len(result) - 1 {
+                    lastAvailablePosition[j] = i + 1
+                }
             }
         }
+        result = RotateMatrix(result)
+    }
 
-        for i := 0; i < orthogonalLength; i++ {
-            for j := 0; j < scanLength; j++ {
-                x, y := i, j
-                maxX, maxY := len(result), len(result[i])
+    return result
+}
 
-                if k % 2 == 1 {
-                    x, y = y, x
-                    maxX, maxY = maxY, maxX
-                }
-
-                if k == 2 || k == 3 {
-                    x = maxX - 1 - x
-                    y = maxY - 1 - y
-                }
-
-                value := result[x][y]
-                if value == 'O' {
-                    result[x][y] = '.'
-                    result[lastAvailablePosition[y]][y] = 'O'
-
-                    if k == 2 || k == 3 {
-                        lastAvailablePosition[y]--
-                    } else {
-                        lastAvailablePosition[y]++
-                    }
-
-                }
-
-                if value == '#' {
-                    if (k == 2 || k == 3) && x > 0 {
-                        lastAvailablePosition[y] = x - 1
-                    } else if x < maxX - 1 {
-                        lastAvailablePosition[y] = x + 1
-                    }
-                }
+func MatrixEqual(a [][]rune, b [][]rune) bool {
+    for i, row := range a {
+        for j, value := range row {
+            if value != b[i][j] {
+                return false
             }
         }
     }
 
-    return result
+    return true
 }
 
 func main() {
@@ -98,10 +93,14 @@ func main() {
     }
 
     // fmt.Println(CalculateLoad(puzzle))
+    previous := puzzle
     result := Cycle(puzzle)
-    for _, row := range result {
-        fmt.Println(string(row))
+
+    for !MatrixEqual(previous, result) {
+        previous = result
+        result = Cycle(result)
     }
 
+    fmt.Println(CalculateLoad(result))
 }
 
