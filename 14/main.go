@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func CalculateLoad(puzzle [][]rune) int {
+func TiltNorthAndCalculateLoad(puzzle [][]rune) int {
     lastAvailablePosition := make([]int, len(puzzle[0]))
 
     sum := 0
@@ -24,6 +24,20 @@ func CalculateLoad(puzzle [][]rune) int {
 
     return sum
 }
+
+func CalculateLoad(puzzle [][]rune) int {
+    sum := 0
+    for i := range puzzle {
+        for _, value := range puzzle[i] {
+            if value == 'O' {
+                sum += len(puzzle) - i
+            }
+        }
+    }
+
+    return sum
+}
+
 
 func RotateMatrix(slice [][]rune) [][]rune {
     xl := len(slice[0])
@@ -92,12 +106,23 @@ func main() {
         puzzle = append(puzzle, []rune(line))
     }
 
-    // fmt.Println(CalculateLoad(puzzle))
-    previous := puzzle
-    result := Cycle(puzzle)
+    initialTrials := max(len(puzzle), len(puzzle[0])) * 2
 
-    for !MatrixEqual(previous, result) {
-        previous = result
+    result := puzzle
+    for i := 0; i < initialTrials; i++ {
+        result = Cycle(result)
+    }
+
+    baseline := result
+    result = Cycle(result)
+
+    counter := 1
+    for ; !MatrixEqual(baseline, result); counter++ {
+        result = Cycle(result)
+    }
+
+    remaining := (1000000000 - initialTrials) % counter
+    for i := 0; i < remaining; i++ {
         result = Cycle(result)
     }
 
